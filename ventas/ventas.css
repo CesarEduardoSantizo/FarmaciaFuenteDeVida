@@ -1,0 +1,20 @@
+@import url('../menu.css');
+.module-main { background: transparent; }
+.content-box { box-shadow: 0 8px 24px rgba(15,23,42,.05); }
+.inline-form { display: grid; grid-template-columns: 1.4fr .7fr 1.3fr auto; align-items: end; gap: 15px; }
+.inline-form label { color: #263238; font-size: 13px; font-weight: 600; }
+.inline-form input, .inline-form select { display: block; width: 100%; margin-top: 8px; padding: 11px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; background: #fff; }
+.btn-primary, .btn-secondary, .link-button { border: 0; border-radius: 7px; cursor: pointer; padding: 11px 16px; font-size: 13px; text-decoration: none; }
+.btn-primary { background: #1687a7; color: #fff; }
+.btn-primary:hover { background: #3da9bc; }
+.btn-secondary { background: #eef7f9; color: #42606a; }
+.link-button { background: #e0f2fe; color: #1687a7; padding: 7px 11px; }
+.alert { border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; font-size: 14px; }
+.alert ul { margin-left: 18px; }.alert.error { color: #991b1b; background: #fee2e2; }.alert.success { color: #166534; background: #dcfce7; }
+.status { display: inline-block; padding: 5px 9px; border-radius: 20px; font-size: 12px; }.completed { color: #166534; background: #dcfce7; }.cancelled { color: #b91c1c; background: #fee2e2; }
+.table-container { overflow-x: auto; } table { min-width: 700px; }
+.sales-filters { display: grid; grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(150px, .45fr)) auto; align-items: end; gap: 10px; margin: 18px 0; }
+.sales-filters input { display: block; width: 100%; min-width: 0; min-height: 42px; margin-top: 6px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; font: inherit; }
+.sales-filters label { color: #475569; font-size: 12px; }
+.sales-filters .btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; white-space: nowrap; }
+@media (max-width: 900px) { .inline-form { grid-template-columns: 1fr 1fr; }.inline-form .btn-primary { grid-column: 1 / -1; }.sales-filters { grid-template-columns: 1fr 1fr; }.sales-filters input[type="search"] { grid-column: 1 / -1; } } @media (max-width: 768px) { .module-main { margin-left: 0; padding: 20px 16px; }.header .user { display: none; }.inline-form { grid-template-columns: 1fr; }.inline-form .btn-primary { grid-column: auto; }.sales-filters { grid-template-columns: 1fr; }.sales-filters input[type="search"] { grid-column: auto; } }

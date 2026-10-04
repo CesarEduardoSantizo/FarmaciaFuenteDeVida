@@ -1,0 +1,568 @@
+/* ===================== RESETEO GENERAL ===================== */
+
+/* ===================== SIDEBAR ===================== */
+
+
+/* ===================== MAIN ===================== */
+.main {
+  margin-left: 250px;
+  padding: 20px;
+  flex: 1;
+  background: #f8fafc;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.menu-toggle {
+  display: none;
+  font-size: 22px;
+  background: none;
+  border: none;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+/* ===================== DASHBOARD CARDS ===================== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card .number {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.success {
+  color: green;
+}
+
+.danger {
+  color: red;
+}
+
+/* ===================== CONTENIDO Y CHARTS ===================== */
+.content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.chart,
+.activity {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.activity ul {
+  list-style: none;
+}
+
+.activity ul li {
+  margin: 10px 0;
+}
+
+.chart-footer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+/* ===================== INVENTARIO ===================== */
+.inventory h2 {
+  margin: 20px 0 10px;
+  font-size: 28px;
+}
+
+.btn-add, .btn-edit, .btn-delete {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-add {
+  background: #dc2626;
+  color: white;
+  margin-bottom: 15px;
+}
+
+.btn-edit {
+  background: #9ca3af;
+  color: white;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.inventory-table th, .inventory-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  font-size: 16px;
+}
+
+.inventory-table th {
+  background: #374151;
+  color: white;
+  font-weight: 600;
+}
+
+.inventory-table tr:hover {
+  background: #f3f4f6;
+}
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+
+  .sidebar.show {
+    transform: translateX(0);
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .main {
+    padding: 15px;
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/*--------CSS VENTAS-------------- KEVIN NATARENO*/
+
+
+        
+/* CSS para clientes */
+.clientes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.cliente-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.cliente-card h3 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.cliente-card p {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.btn-nuevo 
+
+/* SERGIO PROVEEDORES*/
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f8fafc;
+  color: #374151;
+}
+
+ h1 {
+  font-size: 48px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.card h2 {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #374151;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.toolbar input[type="search"] {
+  padding: 10px 14px;
+  border: 2px solid #9ca3af;
+  border-radius: 8px;
+  font-size: 28px;
+  flex: 1;
+}
+
+.toolbar input:focus {
+  outline: none;
+  border-color: #dc2626;
+}
+
+/* Botones */
+.btn {
+
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.btn-nuevo:hover {
+  background: #b91c1c;
+}
+
+.table-section {
+  margin-top: 20px;
+}
+
+.table-section h3 {
+  margin-bottom: 10px;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.btn-add {
+  background: #dc2626;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-add:hover,
+.btn-delete:hover {
+  opacity: 0.9;
+}
+/* ===== Servicio a Domicilio ===== */
+.servicio-domicilio .servicio-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.servicio-domicilio .menu {
+  flex: 2;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.servicio-domicilio .menu h2 {
+  margin-bottom: 15px;
+  color: #1e293b;
+}
+
+.servicio-domicilio .menu-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.servicio-domicilio .menu-item {
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.servicio-domicilio .menu-item:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.servicio-domicilio .menu-item h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.servicio-domicilio .menu-item span {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.servicio-domicilio .menu-item button {
+  background: #1e293b;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.servicio-domicilio .menu-item button:hover {
+  background: #ef4444;
+}
+
+/* Carrito */
+.servicio-domicilio .cart {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+
+  font-size: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background: #b91c1c;
+}
+
+/* Tarjetas */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+
+/* Tabla de proveedores */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 20px;
+}
+
+th, td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+}
+
+th {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Formulario */
+form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.servicio-domicilio .cart h2 {
+  margin-bottom: 15px;
+  color: #1e293b;
+}
+
+.servicio-domicilio .cart-items {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.servicio-domicilio .cart-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.servicio-domicilio .cart-summary {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.servicio-domicilio .checkout-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  cursor: not-allowed; /* deshabilitado hasta JS */
+}
+
+/* Modal Checkout (solo visual) */
+.servicio-domicilio .checkout-modal {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.servicio-domicilio .checkout-card h3 {
+  margin-bottom: 15px;
+  color: #1e293b;
+}
+
+.servicio-domicilio .checkout-card label {
+  display: block;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.servicio-domicilio .checkout-card input,
+.servicio-domicilio .checkout-card textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+}
+
+.servicio-domicilio .checkout-card textarea {
+  resize: none;
+}
+
+.servicio-domicilio .form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.servicio-domicilio .btn {
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.servicio-domicilio .btn.primary {
+  background: #ef4444;
+  color: #fff;
+}
+
+.servicio-domicilio .btn.primary:hover {
+  background: #dc2626;
+}
+
+.servicio-domicilio .btn[type="button"] {
+  background: #cbd5e1;
+  color: #1e293b;
+}
+
+.servicio-domicilio .btn[type="button"]:hover {
+  background: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .servicio-domicilio .servicio-container {
+    flex-direction: column;
+  }
+
+  .servicio-domicilio .menu,
+  .servicio-domicilio .cart {
+    width: 100%;
+  }
+}
+
+label {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"] {
+  padding: 10px 14px;
+  border: 2px solid #9ca3af;
+  border-radius: 8px;
+  font-size: 20px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #dc2626;
+}
+
+form button {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+/*FIN SERGIO PROVEEDORES*/

@@ -1,0 +1,21 @@
+@import url('../menu.css');
+
+.module-main { background: transparent; }
+.content-box { box-shadow: 0 8px 24px rgba(15, 23, 42, .05); }
+.search input { background: #fff; }
+.btn-primary, .search button { text-decoration: none; }
+.inventory-filters { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(160px, .7fr) minmax(150px, .65fr) auto; align-items: center; gap: 10px; margin-bottom: 20px; }
+.inventory-filters input, .inventory-filters select { width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #263238; font: inherit; }
+.clear-filters { color: #64748b; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.clear-filters:hover { color: #1687a7; text-decoration: underline; }
+.table-container { overflow-x: auto; }
+table { min-width: 840px; }
+.empty-state { padding: 32px; text-align: center; color: #64748b; }
+.actions { white-space: nowrap; }
+.actions a, .actions button { display: inline-block; border: 0; border-radius: 6px; padding: 8px 10px; font-size: 12px; cursor: pointer; text-decoration: none; }
+.actions .edit { background: #e0f2fe; color: #1687a7; }
+.actions .delete { background: #fee2e2; color: #dc2626; }
+.actions .edit:hover { background: #ccecf3; }
+.actions .delete:hover { background: #fecaca; }
+@media (max-width: 1000px) { .inventory-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }.inventory-filters input { grid-column: 1 / -1; } }
+@media (max-width: 768px) { .module-main { margin-left: 0; padding: 20px 16px; } .header .user { display: none; }.inventory-filters { grid-template-columns: 1fr; }.inventory-filters input { grid-column: auto; } }

@@ -1,0 +1,22 @@
+.table-container td:last-child {
+    min-width: 150px;
+    white-space: nowrap;
+}
+
+.table-container td:last-child form {
+    display: inline-flex;
+    margin: 0 0 0 6px;
+    vertical-align: middle;
+}
+
+.table-container .edit,
+.table-container .delete {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 7px 11px;
+    line-height: 1;
+    white-space: nowrap;
+}
