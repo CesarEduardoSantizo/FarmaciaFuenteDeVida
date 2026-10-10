@@ -9,6 +9,13 @@ COLLATE utf8mb4_unicode_ci;
 
 USE farmacia_fuente_vida;
 
+CREATE TABLE IF NOT EXISTS roles (
+	nombre VARCHAR(30) NOT NULL PRIMARY KEY,
+	creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO roles (nombre) VALUES ('Administrador'), ('Vendedor');
+
 CREATE TABLE IF NOT EXISTS usuarios (
 	id_usuario INT AUTO_INCREMENT PRIMARY KEY,
 	nombre VARCHAR(100) NOT NULL,
@@ -17,7 +24,18 @@ CREATE TABLE IF NOT EXISTS usuarios (
 	correo VARCHAR(150),
 	rol VARCHAR(30) NOT NULL DEFAULT 'Administrador',
 	estado BOOLEAN NOT NULL DEFAULT TRUE,
-	fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT fk_usuarios_rol FOREIGN KEY (rol)
+		REFERENCES roles(nombre)
+		ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS permisos_modulos (
+	rol VARCHAR(30) NOT NULL,
+	modulo VARCHAR(50) NOT NULL,
+	puede_acceder BOOLEAN NOT NULL DEFAULT FALSE,
+	actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (rol, modulo)
 );
 
 CREATE TABLE IF NOT EXISTS alertas_atendidas (
@@ -67,6 +85,15 @@ CREATE TABLE IF NOT EXISTS configuracion (
 	actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS catalogo_presentaciones (
+	id_catalogo_presentacion INT AUTO_INCREMENT PRIMARY KEY,
+	nombre VARCHAR(100) NOT NULL UNIQUE,
+	nivel SMALLINT UNSIGNED NOT NULL,
+	estado BOOLEAN NOT NULL DEFAULT TRUE,
+	fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT chk_presentacion_nivel CHECK (nivel >= 1)
+);
+
 CREATE TABLE IF NOT EXISTS productos (
 	id_producto INT AUTO_INCREMENT PRIMARY KEY,
 	codigo VARCHAR(50) NOT NULL UNIQUE,
@@ -84,12 +111,29 @@ CREATE TABLE IF NOT EXISTS productos (
 		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS producto_presentaciones (
+	id_producto_presentacion INT AUTO_INCREMENT PRIMARY KEY,
+	id_producto INT NOT NULL,
+	id_catalogo_presentacion INT NOT NULL,
+	unidades_base BIGINT UNSIGNED NOT NULL,
+	precio_venta DECIMAL(10,2) NOT NULL,
+	estado BOOLEAN NOT NULL DEFAULT TRUE,
+	UNIQUE KEY uk_producto_presentacion (id_producto, id_catalogo_presentacion),
+	CONSTRAINT chk_presentacion_unidades CHECK (unidades_base > 0),
+	CONSTRAINT fk_presentacion_producto FOREIGN KEY (id_producto)
+		REFERENCES productos(id_producto)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT fk_presentacion_catalogo FOREIGN KEY (id_catalogo_presentacion)
+		REFERENCES catalogo_presentaciones(id_catalogo_presentacion)
+		ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
 CREATE TABLE IF NOT EXISTS lotes (
 	id_lote INT AUTO_INCREMENT PRIMARY KEY,
 	id_producto INT NOT NULL,
 	numero_lote VARCHAR(50) NOT NULL,
 	fecha_vencimiento DATE NOT NULL,
-	cantidad INT NOT NULL DEFAULT 0,
+	cantidad BIGINT UNSIGNED NOT NULL DEFAULT 0,
 	costo_unitario DECIMAL(10,2) NOT NULL,
 	estado BOOLEAN NOT NULL DEFAULT TRUE,
 	CONSTRAINT fk_lote_producto FOREIGN KEY (id_producto)
@@ -119,7 +163,9 @@ CREATE TABLE IF NOT EXISTS detalle_compras (
 	id_compra INT NOT NULL,
 	id_producto INT NOT NULL,
 	id_lote INT NOT NULL,
+	id_producto_presentacion INT NULL,
 	cantidad INT NOT NULL,
+	cantidad_base BIGINT UNSIGNED NULL,
 	costo_unitario DECIMAL(10,2) NOT NULL,
 	subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * costo_unitario) STORED,
 	CONSTRAINT fk_detalle_compra FOREIGN KEY (id_compra)
@@ -130,7 +176,10 @@ CREATE TABLE IF NOT EXISTS detalle_compras (
 		ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_detalle_lote_compra FOREIGN KEY (id_lote)
 		REFERENCES lotes(id_lote)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE RESTRICT,
+	CONSTRAINT fk_detalle_presentacion_compra FOREIGN KEY (id_producto_presentacion)
+		REFERENCES producto_presentaciones(id_producto_presentacion)
+		ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS ventas (
@@ -154,7 +203,9 @@ CREATE TABLE IF NOT EXISTS detalle_ventas (
 	id_venta INT NOT NULL,
 	id_producto INT NOT NULL,
 	id_lote INT NOT NULL,
+	id_producto_presentacion INT NULL,
 	cantidad INT NOT NULL,
+	cantidad_base BIGINT UNSIGNED NULL,
 	precio_unitario DECIMAL(10,2) NOT NULL,
 	subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
 	CONSTRAINT fk_detalle_venta FOREIGN KEY (id_venta)
@@ -165,6 +216,22 @@ CREATE TABLE IF NOT EXISTS detalle_ventas (
 		ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_detalle_lote_venta FOREIGN KEY (id_lote)
 		REFERENCES lotes(id_lote)
+		ON UPDATE CASCADE ON DELETE RESTRICT,
+	CONSTRAINT fk_detalle_presentacion_venta FOREIGN KEY (id_producto_presentacion)
+		REFERENCES producto_presentaciones(id_producto_presentacion)
+		ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS detalle_ventas_lotes (
+	id_detalle_venta_lote INT AUTO_INCREMENT PRIMARY KEY,
+	id_detalle_venta INT NOT NULL,
+	id_lote INT NOT NULL,
+	cantidad_base BIGINT UNSIGNED NOT NULL,
+	CONSTRAINT fk_asignacion_venta_detalle FOREIGN KEY (id_detalle_venta)
+		REFERENCES detalle_ventas(id_detalle_venta)
+		ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT fk_asignacion_venta_lote FOREIGN KEY (id_lote)
+		REFERENCES lotes(id_lote)
 		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
@@ -174,17 +241,11 @@ CREATE TRIGGER trg_entrada_inventario
 AFTER INSERT ON detalle_compras
 FOR EACH ROW
 BEGIN
-	UPDATE lotes SET cantidad = cantidad + NEW.cantidad
+	UPDATE lotes SET cantidad = cantidad + COALESCE(NEW.cantidad_base, NEW.cantidad)
 	WHERE id_lote = NEW.id_lote;
 END$$
 DROP TRIGGER IF EXISTS trg_salida_inventario$$
-CREATE TRIGGER trg_salida_inventario
-AFTER INSERT ON detalle_ventas
-FOR EACH ROW
-BEGIN
-	UPDATE lotes SET cantidad = cantidad - NEW.cantidad
-	WHERE id_lote = NEW.id_lote;
-END$$
+-- Las salidas se aplican en la transacción de ventas y se asignan entre lotes vigentes.
 DELIMITER ;
 
 CREATE OR REPLACE VIEW vista_inventario AS
@@ -212,11 +273,14 @@ WHERE l.estado = TRUE AND l.fecha_vencimiento >= CURDATE()
 
 CREATE OR REPLACE VIEW vista_reporte_ventas AS
 SELECT v.id_venta, v.fecha_venta, u.nombre AS usuario, v.metodo_pago,
-	   p.codigo, p.nombre AS producto, dv.cantidad, dv.precio_unitario, dv.subtotal
+	   p.codigo, p.nombre AS producto, cp.nombre AS presentacion,
+	   dv.cantidad, dv.cantidad_base, dv.precio_unitario, dv.subtotal
 FROM ventas v
 INNER JOIN usuarios u ON v.id_usuario = u.id_usuario
 INNER JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
-INNER JOIN productos p ON dv.id_producto = p.id_producto;
+INNER JOIN productos p ON dv.id_producto = p.id_producto
+LEFT JOIN producto_presentaciones pp ON pp.id_producto_presentacion = dv.id_producto_presentacion
+LEFT JOIN catalogo_presentaciones cp ON cp.id_catalogo_presentacion = pp.id_catalogo_presentacion;
 
 CREATE OR REPLACE VIEW vista_ventas_diarias AS
 SELECT DATE(fecha_venta) AS fecha, COUNT(id_venta) AS cantidad_ventas,
@@ -238,6 +302,12 @@ INSERT IGNORE INTO categorias (nombre, descripcion) VALUES
 ('Antigripales', 'Medicamentos para síntomas de gripe y resfriado'),
 ('Vitaminas', 'Suplementos y vitaminas'),
 ('Otros', 'Otros productos farmacéuticos');
+
+INSERT IGNORE INTO catalogo_presentaciones (nombre, nivel) VALUES
+('Unidad', 1),
+('Blíster', 2),
+('Cajita', 3),
+('Caja', 4);
 
 -- Catálogo de medicamentos FDV-001 a FDV-172.
 SET @id_categoria_otros = (SELECT id_categoria FROM categorias WHERE nombre = 'Otros' LIMIT 1);
@@ -1450,6 +1520,12 @@ VALUES
 
 COMMIT;
 
+INSERT IGNORE INTO producto_presentaciones
+	(id_producto, id_catalogo_presentacion, unidades_base, precio_venta)
+SELECT p.id_producto, cp.id_catalogo_presentacion, 1, p.precio_venta
+FROM productos p
+INNER JOIN catalogo_presentaciones cp ON cp.nombre = 'Unidad';
+
 INSERT INTO proveedores (nombre, nit, telefono, correo, direccion)
 SELECT 'Proveedor Farmacéutico 1', '123456-7', '5555-1111',
 	   'proveedor1@email.com', 'Ciudad de Guatemala'
@@ -1460,3 +1536,29 @@ SELECT 'Administrador de Farmacia', 'admin_fuente_vida', '$2y$10$uWgzGVgiy1rAbN4
 WHERE NOT EXISTS (
 	SELECT 1 FROM usuarios WHERE usuario = 'admin_fuente_vida'
 );
+
+INSERT IGNORE INTO roles (nombre)
+SELECT DISTINCT rol FROM usuarios WHERE rol IS NOT NULL AND rol <> '';
+
+INSERT IGNORE INTO roles (nombre) VALUES ('Administrador'), ('Vendedor');
+
+INSERT IGNORE INTO permisos_modulos (rol, modulo, puede_acceder)
+SELECT roles.nombre, modulos.modulo,
+	   CASE WHEN roles.nombre = 'Administrador' THEN TRUE
+	        WHEN roles.nombre = 'Vendedor' AND modulos.modulo <> 'usuarios' THEN TRUE
+	        ELSE FALSE END
+FROM roles
+CROSS JOIN (
+	SELECT 'inicio' AS modulo
+	UNION ALL SELECT 'inventario'
+	UNION ALL SELECT 'productos'
+	UNION ALL SELECT 'catalogo_presentaciones'
+	UNION ALL SELECT 'ventas'
+	UNION ALL SELECT 'clientes'
+	UNION ALL SELECT 'compras'
+	UNION ALL SELECT 'proveedores'
+	UNION ALL SELECT 'reportes'
+	UNION ALL SELECT 'alertas'
+	UNION ALL SELECT 'configuracion'
+	UNION ALL SELECT 'usuarios'
+) AS modulos;

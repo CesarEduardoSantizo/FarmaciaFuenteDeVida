@@ -5,16 +5,31 @@ require_once __DIR__ . '/../csrf.php';
 validar_csrf();
 require_once __DIR__ . '/../conexion.php';
 require_once __DIR__ . '/../config_helpers.php';
+require_once __DIR__ . '/../permisos.php';
 $db = conectar();
+exigir_permiso_modulo($db, 'compras');
 $configuracion = cargar_configuracion($db);
 $simboloMoneda = simbolo_moneda($configuracion);
+$productoSeleccionado = filter_var($_GET['producto'] ?? '', FILTER_VALIDATE_INT) ?: 0;
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $productoSeleccionado = filter_var($_POST['id_producto'] ?? '', FILTER_VALIDATE_INT) ?: 0;
+}
 $errores = [];
 $mensaje = isset($_GET['registrada']) ? 'Compra registrada y existencias actualizadas.' : '';
 $proveedores = $db->query('SELECT id_proveedor, nombre FROM proveedores WHERE estado = 1 ORDER BY nombre')->fetch_all(MYSQLI_ASSOC);
 $productos = $db->query('SELECT id_producto, nombre FROM productos WHERE estado = 1 ORDER BY nombre')->fetch_all(MYSQLI_ASSOC);
+$presentacionesPorProducto = [];
+$stmt = $db->query('SELECT pp.id_producto, pp.id_producto_presentacion, cp.nombre, cp.nivel, pp.unidades_base FROM producto_presentaciones pp INNER JOIN catalogo_presentaciones cp ON cp.id_catalogo_presentacion = pp.id_catalogo_presentacion WHERE pp.estado = 1 ORDER BY cp.nivel DESC, cp.nombre');
+foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $presentacion) {
+    $presentacion['nombre'] = nombre_presentacion_visible($presentacion['nombre']);
+    $presentacionesPorProducto[(int)$presentacion['id_producto']][] = $presentacion;
+}
+$productos = array_values(array_filter($productos, static fn(array $producto): bool => !empty($presentacionesPorProducto[(int)$producto['id_producto']])));
+$presentacionesCompraJson = htmlspecialchars(json_encode($presentacionesPorProducto, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG), ENT_QUOTES, 'UTF-8');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $proveedorId = filter_input(INPUT_POST, 'id_proveedor', FILTER_VALIDATE_INT);
     $productoId = filter_input(INPUT_POST, 'id_producto', FILTER_VALIDATE_INT);
+    $presentacionId = filter_input(INPUT_POST, 'id_producto_presentacion', FILTER_VALIDATE_INT);
     $cantidad = filter_var($_POST['cantidad'] ?? '', FILTER_VALIDATE_INT);
     $numeroLote = trim($_POST['numero_lote'] ?? '');
     $vencimiento = trim($_POST['fecha_vencimiento'] ?? '');
@@ -22,11 +37,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $factura = trim($_POST['numero_factura'] ?? '');
     if (!$proveedorId || !in_array($proveedorId, array_map('intval', array_column($proveedores, 'id_proveedor')), true)) $errores[] = 'Seleccione un proveedor válido.';
     if (!$productoId || !in_array($productoId, array_map('intval', array_column($productos, 'id_producto')), true)) $errores[] = 'Seleccione un producto válido.';
+    $presentacionProducto = null;
+    foreach ($presentacionesPorProducto[$productoId] ?? [] as $opcionPresentacion) {
+        if ((int)$opcionPresentacion['id_producto_presentacion'] === $presentacionId) {
+            $presentacionProducto = $opcionPresentacion;
+            break;
+        }
+    }
+    if (!$presentacionProducto) $errores[] = 'Seleccione una presentación configurada para el producto.';
     if ($cantidad === false || $cantidad < 1) $errores[] = 'La cantidad debe ser un entero mayor que cero.';
+    if ($presentacionProducto && $cantidad !== false && $cantidad > intdiv(PHP_INT_MAX, (int)$presentacionProducto['unidades_base'])) $errores[] = 'La cantidad supera el límite permitido para esta presentación.';
     if ($numeroLote === '') $errores[] = 'Ingrese el número de lote.';
     $fecha = DateTime::createFromFormat('Y-m-d', $vencimiento);
     if (!$fecha || $fecha->format('Y-m-d') !== $vencimiento) $errores[] = 'Ingrese una fecha de vencimiento válida.';
-    if (!is_numeric($costo) || (float)$costo <= 0) $errores[] = 'El costo unitario debe ser mayor que cero.';
+    if (!is_numeric($costo) || (float)$costo <= 0 || (float)$costo > 99999999.99) $errores[] = 'El costo por presentación debe ser mayor que cero y no exceder el límite permitido.';
+    if ($cantidad !== false && is_numeric($costo) && (float)$costo * $cantidad > 99999999.99) $errores[] = 'El total de la compra supera el límite permitido.';
     if (!$errores) {
         try {
             $db->begin_transaction();
@@ -46,15 +71,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $stmt->bind_param('iis', $proveedorId, $_SESSION['usuario_id'], $factura);
             $stmt->execute();
             $compraId = $db->insert_id;
-            $stmt = $db->prepare('INSERT INTO detalle_compras (id_compra, id_producto, id_lote, cantidad, costo_unitario) VALUES (?, ?, ?, ?, ?)');
-            $stmt->bind_param('iiiid', $compraId, $productoId, $loteId, $cantidad, $costo);
+            $cantidadBase = $cantidad * (int)$presentacionProducto['unidades_base'];
+            $stmt = $db->prepare('INSERT INTO detalle_compras (id_compra, id_producto, id_lote, id_producto_presentacion, cantidad, cantidad_base, costo_unitario) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $stmt->bind_param('iiiiiid', $compraId, $productoId, $loteId, $presentacionId, $cantidad, $cantidadBase, $costo);
             $stmt->execute();
             $total = $cantidad * (float)$costo;
             $stmt = $db->prepare('UPDATE compras SET total = ? WHERE id_compra = ?');
             $stmt->bind_param('di', $total, $compraId);
             $stmt->execute();
+            $costoBase = (float)$costo / (int)$presentacionProducto['unidades_base'];
             $stmt = $db->prepare('UPDATE lotes SET costo_unitario = ?, fecha_vencimiento = ?, estado = 1 WHERE id_lote = ?');
-            $stmt->bind_param('dsi', $costo, $vencimiento, $loteId);
+            $stmt->bind_param('dsi', $costoBase, $vencimiento, $loteId);
             $stmt->execute();
             $db->commit();
             header('Location: /compras/?registrada=' . $compraId);
@@ -81,16 +108,18 @@ $resumenCompras = $db->query("SELECT COUNT(*) AS cantidad, COALESCE(SUM(total), 
 ?>
 <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Compras | Farmacia Fuente de Vida</title><link rel="stylesheet" href="../menu.css"><link rel="stylesheet" href="compras.css"></head><body>
 <?php include __DIR__ . '/../SideBar/menu.php'; ?>
+<script defer src="compras.js"></script>
 <main class="main module-main"><header class="header"><div><h1>Compras de medicamentos</h1><p>Registra el gasto de productos comprados a proveedores y su entrada al inventario.</p></div><div class="user"><div class="user-avatar"><?= htmlspecialchars(strtoupper(substr($_SESSION['usuario_nombre'] ?? 'U', 0, 1)), ENT_QUOTES, 'UTF-8') ?></div><div><strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? $_SESSION['usuario'], ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars($_SESSION['usuario_rol'] ?? '', ENT_QUOTES, 'UTF-8') ?></small></div></div></header>
 <?php if ($errores): ?><div class="alert error"><ul><?php foreach ($errores as $error): ?><li><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></li><?php endforeach; ?></ul></div><?php elseif ($mensaje): ?><div class="alert success"><?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-<section class="content-box purchase-form-box"><div class="section-header"><div><h2>Registrar compra</h2><p>El total se calcula con la cantidad y el costo unitario. Al guardar, se agrega al inventario.</p></div></div><form method="POST" class="provider-form"><?= csrf_input() ?>
+<section class="content-box purchase-form-box"><div class="section-header"><div><h2>Registrar compra y agregar existencias</h2><p>Registra cada entrada al inventario con su proveedor, lote, vencimiento, cantidad y costo de compra.</p></div></div><form method="POST" class="provider-form" data-presentations="<?= $presentacionesCompraJson ?>" data-selected-product="<?= $productoSeleccionado ?>" data-selected-presentation="<?= (int)($_POST['id_producto_presentacion'] ?? 0) ?>"><?= csrf_input() ?>
 <label>Proveedor<select name="id_proveedor" required><option value="">Seleccione</option><?php foreach ($proveedores as $proveedor): ?><option value="<?= (int)$proveedor['id_proveedor'] ?>"><?= htmlspecialchars($proveedor['nombre'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
-<label>Producto<select name="id_producto" required><option value="">Seleccione</option><?php foreach ($productos as $producto): ?><option value="<?= (int)$producto['id_producto'] ?>"><?= htmlspecialchars($producto['nombre'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
+<label>Producto<select name="id_producto" id="purchase-product" required><option value="">Seleccione</option><?php foreach ($productos as $producto): ?><option value="<?= (int)$producto['id_producto'] ?>" <?= $productoSeleccionado === (int)$producto['id_producto'] ? 'selected' : '' ?>><?= htmlspecialchars($producto['nombre'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
+<label>Presentación de compra<select name="id_producto_presentacion" id="purchase-presentation" required><option value="">Seleccione primero un producto</option></select></label>
 <label>Número de factura<input name="numero_factura"></label>
 <label>Número de lote<input name="numero_lote" required></label>
 <label>Vencimiento<input type="date" name="fecha_vencimiento" required></label>
 <label>Cantidad<input id="cantidad-compra" type="number" name="cantidad" min="1" step="1" required></label>
-<label>Costo unitario (<?= $simboloMoneda ?>)<input id="costo-compra" type="number" name="costo_unitario" min="0.01" step="0.01" required></label>
+<label id="purchase-cost-label" data-currency="<?= htmlspecialchars($simboloMoneda, ENT_QUOTES, 'UTF-8') ?>">Costo por presentación (<?= $simboloMoneda ?>)<input id="costo-compra" type="number" name="costo_unitario" min="0.01" step="0.01" value="<?= htmlspecialchars($_POST['costo_unitario'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required></label>
 <div class="purchase-total" aria-live="polite"><span>Gasto de esta compra</span><strong><?= $simboloMoneda ?> <span id="total-compra">0.00</span></strong></div>
 <button class="btn-primary" type="submit" <?= !$proveedores || !$productos ? 'disabled' : '' ?>>Registrar compra</button>
 </form></section>

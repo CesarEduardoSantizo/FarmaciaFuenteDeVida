@@ -6,7 +6,9 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 require_once __DIR__ . '/conexion.php';
 require_once __DIR__ . '/config_helpers.php';
+require_once __DIR__ . '/permisos.php';
 $db = conectar();
+exigir_permiso_modulo($db, 'inicio');
 $configuracion = cargar_configuracion($db);
 $umbralStock = umbral_stock($configuracion);
 $diasVencimiento = dias_alerta_vencimiento($configuracion);
@@ -135,7 +137,6 @@ $alertas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             <!-- Buscador -->
             <form class="search dashboard-search" action="/inventario/" method="GET" data-auto-filter>
                 <input type="search" name="buscar" placeholder="Buscar producto..." aria-label="Buscar producto por nombre o código">
-                <a class="clear-filters" href="/inventario/">Limpiar</a>
             </form>
 
 
@@ -146,7 +147,6 @@ $alertas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Producto</th>
                             <th>Categoría</th>
                             <th>Stock</th>
@@ -156,8 +156,8 @@ $alertas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                         </tr>
                     </thead>
 
-                    <tbody><?php if (!$inventario): ?><tr><td colspan="7">No hay productos registrados.</td></tr><?php endif; ?>
-                    <?php foreach ($inventario as $producto): ?><tr><td><?= (int)$producto['id_producto'] ?></td><td><strong><?= htmlspecialchars($producto['nombre'], ENT_QUOTES, 'UTF-8') ?></strong></td><td><?= htmlspecialchars($producto['categoria'], ENT_QUOTES, 'UTF-8') ?></td><td><span class="stock <?= (int)$producto['stock_actual'] <= max((int)$producto['stock_minimo'], $umbralStock) ? 'low' : 'normal' ?>"><?= (int)$producto['stock_actual'] ?></span></td><td><?= $simboloMoneda ?> <?= number_format((float)$producto['precio_venta'], 2) ?></td><td><?= $producto['vencimiento'] ? date('d/m/Y', strtotime($producto['vencimiento'])) : 'Sin lote' ?></td><td class="actions"><a class="edit" href="/productos/?id=<?= (int)$producto['id_producto'] ?>">Editar</a></td></tr><?php endforeach; ?></tbody>
+                    <tbody><?php if (!$inventario): ?><tr><td colspan="6">No hay productos registrados.</td></tr><?php endif; ?>
+                    <?php foreach ($inventario as $producto): ?><tr><td><strong><?= htmlspecialchars($producto['nombre'], ENT_QUOTES, 'UTF-8') ?></strong></td><td><?= htmlspecialchars($producto['categoria'], ENT_QUOTES, 'UTF-8') ?></td><td><span class="stock <?= (int)$producto['stock_actual'] <= max((int)$producto['stock_minimo'], $umbralStock) ? 'low' : 'normal' ?>"><?= (int)$producto['stock_actual'] ?></span></td><td><?= $simboloMoneda ?> <?= number_format((float)$producto['precio_venta'], 2) ?></td><td><?= $producto['vencimiento'] ? date('d/m/Y', strtotime($producto['vencimiento'])) : 'Sin lote' ?></td><td class="actions"><a class="edit" href="/productos/?id=<?= (int)$producto['id_producto'] ?>">Editar</a></td></tr><?php endforeach; ?></tbody>
 
                 </table>
 
@@ -185,16 +185,6 @@ $alertas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     </main>
 
 
-    <script>
-
-        const menuBtn = document.getElementById("menuBtn");
-        const sidebar = document.querySelector(".sidebar");
-
-        menuBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("show");
-        });
-
-    </script>
     <script src="/dev-reload.js"></script>
 
 </body>

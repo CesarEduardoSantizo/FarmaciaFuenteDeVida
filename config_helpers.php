@@ -25,3 +25,9 @@ function confirmar_eliminaciones(array $configuracion): bool
 {
     return ($configuracion['confirmar_eliminaciones'] ?? '1') === '1';
 }
+
+function nombre_presentacion_visible(string $nombre): string
+{
+    $nombre = preg_replace('/(?<!\p{L})bl(?:\x{251C}\x{00A1}|\x{00C3}\x{00AD})ster(?!\p{L})/iu', 'Blíster', $nombre) ?? $nombre;
+    return preg_replace('/(?<!\p{L})bl[ií]ster(?!\p{L})/iu', 'Blíster', $nombre) ?? $nombre;
+}

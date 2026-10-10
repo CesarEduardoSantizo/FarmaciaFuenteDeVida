@@ -287,14 +287,22 @@ body {
 
 .menu-btn {
     display: none;
-
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
     border: none;
-
-    background: none;
-
-    font-size: 25px;
-
+    border-radius: 8px;
+    background: #e8f7fa;
+    color: #1687a7;
+    font-size: 24px;
+    line-height: 1;
     cursor: pointer;
+}
+
+.menu-btn:hover {
+    background: #d8f0f4;
 }
 
 @media (min-width: 769px) {
@@ -527,8 +535,27 @@ body {
 }
 
 .dashboard-search .clear-filters {
+    display: inline-flex;
     align-self: center;
-    padding: 10px 4px;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #fff;
+    color: #42606a;
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.dashboard-search .clear-filters:hover {
+    border-color: #1687a7;
+    background: #f0fafb;
+    color: #087c9a;
+    text-decoration: none;
 }
 
 
@@ -538,8 +565,93 @@ body {
 
 .table-container {
     width: 100%;
-
+    max-width: 100%;
     overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+.table-scrollbar {
+    display: none;
+}
+
+.logout-confirm-dialog {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: min(360px, calc(100% - 32px));
+    margin: 0;
+    padding: 30px 28px 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    color: #263238;
+    text-align: center;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .25);
+}
+
+.logout-confirm-dialog::backdrop {
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(2px);
+}
+
+.logout-confirm-icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #bfecef;
+    color: #1687a7;
+    font-size: 28px;
+}
+
+.logout-confirm-dialog h2 {
+    margin: 0 0 8px;
+    font-size: 21px;
+}
+
+.logout-confirm-dialog p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.logout-confirm-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.logout-confirm-actions button {
+    flex: 1;
+    min-height: 42px;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.logout-cancel-button {
+    background: #eef2f5;
+    color: #42606a;
+}
+
+.logout-cancel-button:hover {
+    background: #e2e8f0;
+}
+
+.logout-submit-button {
+    background: #ef4444;
+    color: #fff;
+}
+
+.logout-submit-button:hover {
+    background: #dc2626;
 }
 
 table {
@@ -604,6 +716,23 @@ td {
     display: flex;
 
     gap: 6px;
+}
+
+.actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.actions a.edit:hover {
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .actions button {
@@ -712,7 +841,8 @@ td {
     }
 
     .menu-btn {
-        display: block;
+        display: inline-flex;
+        order: -1;
     }
 
     .header {
@@ -741,7 +871,52 @@ td {
         gap: 15px;
 
         flex-direction: column;
+
     }
+
+    .table-scrollbar {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 16px;
+        margin: 8px 0 2px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e1edf0;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .table-scrollbar[hidden] {
+        display: none;
+    }
+
+    .table-scrollbar-thumb {
+        position: absolute;
+        top: 4px;
+        left: 0;
+        height: 8px;
+        min-width: 36px;
+        border-radius: 999px;
+        background: #1687a7;
+        transition: background-color .15s ease;
+    }
+
+    .table-scrollbar:hover .table-scrollbar-thumb,
+    .table-scrollbar.dragging .table-scrollbar-thumb {
+        background: #0f6f89;
+    }
+
+    .table-scrollbar:focus-visible {
+        outline: 3px solid rgba(22, 135, 167, .3);
+        outline-offset: 2px;
+    }
+
+    .table-scrollbar.dragging {
+        cursor: grabbing;
+    }
+
 
 }
 
